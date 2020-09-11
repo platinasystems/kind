@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/kind/pkg/errors"
 	"sigs.k8s.io/kind/pkg/exec"
 	"sigs.k8s.io/kind/pkg/fs"
+	"sigs.k8s.io/kind/pkg/log"
 
 	"sigs.k8s.io/kind/pkg/cluster/internal/loadbalancer"
 	"sigs.k8s.io/kind/pkg/cluster/internal/providers/common"
@@ -33,7 +34,7 @@ import (
 )
 
 // planCreation creates a slice of funcs that will create the containers
-func planCreation(cfg *config.Cluster, networkName string) (createContainerFuncs []func() error, err error) {
+func planCreation(logger log.Logger, cfg *config.Cluster, networkName string) (createContainerFuncs []func() error, err error) {
 	// we need to know all the names for NO_PROXY
 	// compute the names first before any actual node details
 	nodeNamer := common.MakeNodeNamer(cfg.Name)
@@ -42,6 +43,8 @@ func planCreation(cfg *config.Cluster, networkName string) (createContainerFuncs
 		name := nodeNamer(string(node.Role)) // name the node
 		names[i] = name
 	}
+	logger.V(2).Infof("Nodes to be built: %v", names)
+
 	haveLoadbalancer := clusterHasImplicitLoadBalancer(cfg)
 	if haveLoadbalancer {
 		names = append(names, nodeNamer(constants.ExternalLoadBalancerNodeRoleValue))
@@ -49,6 +52,8 @@ func planCreation(cfg *config.Cluster, networkName string) (createContainerFuncs
 
 	// these apply to all container creation
 	genericArgs, err := commonArgs(cfg.Name, cfg, networkName, names)
+
+	logger.V(2).Infof("Generic Args: %v", genericArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +61,7 @@ func planCreation(cfg *config.Cluster, networkName string) (createContainerFuncs
 	// only the external LB should reflect the port if we have multiple control planes
 	apiServerPort := cfg.Networking.APIServerPort
 	apiServerAddress := cfg.Networking.APIServerAddress
+	logger.V(2).Infof("API Server Details: %s:%s", apiServerAddress, apiServerPort)
 	if haveLoadbalancer {
 		// TODO: picking ports locally is less than ideal with remote docker
 		// but this is supposed to be an implementation detail and NOT picking
@@ -82,6 +88,7 @@ func planCreation(cfg *config.Cluster, networkName string) (createContainerFuncs
 		node := node.DeepCopy() // copy so we can modify
 		name := names[i]
 
+
 		// fixup relative paths, docker can only handle absolute paths
 		for m := range node.ExtraMounts {
 			hostPath := node.ExtraMounts[m].HostPath
@@ -93,22 +100,33 @@ func planCreation(cfg *config.Cluster, networkName string) (createContainerFuncs
 				node.ExtraMounts[m].HostPath = absHostPath
 			}
 		}
-
+		
 		// plan actual creation based on role
 		switch node.Role {
 		case config.ControlPlaneRole:
 			createContainerFuncs = append(createContainerFuncs, func() error {
-				node.ExtraPortMappings = append(node.ExtraPortMappings,
-					config.PortMapping{
-						ListenAddress: apiServerAddress,
-						HostPort:      apiServerPort,
-						ContainerPort: common.APIServerInternalPort,
-					},
-				)
+				if cfg.Networking.ProviderNetwork == "host" {
+					apiServerAddress = "192.169.65.3"  // BIG HACK!!
+					apiServerPort = common.APIServerInternalPort // 6443
+					genericArgs = append(genericArgs, "--label", fmt.Sprintf("desktop.docker.io/ports/%d/tcp=%s:%d", common.APIServerInternalPort, apiServerAddress, apiServerPort))
+					//extraArgs = []string {
+					//	"--label", fmt.Sprintf("desktop.docker.io/ports/%d/tcp: \"%s:%d\"", common.APIServerInternalPort, apiServerAddress, apiServerPort),
+					//}
+				} else {
+					node.ExtraPortMappings = append(node.ExtraPortMappings,
+						config.PortMapping{
+							ListenAddress: apiServerAddress,
+							HostPort:      apiServerPort,
+							ContainerPort: common.APIServerInternalPort,
+						},
+					)
+				}
+
 				args, err := runArgsForNode(node, cfg.Networking.IPFamily, name, genericArgs)
 				if err != nil {
 					return err
 				}
+				logger.V(2).Infof("Create Control Container %s, with Args %v", name, args )
 				return createContainer(args)
 			})
 		case config.WorkerRole:
@@ -117,6 +135,7 @@ func planCreation(cfg *config.Cluster, networkName string) (createContainerFuncs
 				if err != nil {
 					return err
 				}
+				logger.V(2).Infof("Create Worker Container %s, with Args %v", name, args )
 				return createContainer(args)
 			})
 		default:

@@ -69,6 +69,8 @@ type ClusterOptions struct {
 	// Options to control output
 	DisplayUsage      bool
 	DisplaySalutation bool
+	// Overrides "kind" network used for communicating between the node images
+	ProviderNetwork string
 }
 
 // Cluster creates a cluster
@@ -243,6 +245,9 @@ func fixupOptions(opts *ClusterOptions) error {
 		}
 	}
 
+	if opts.ProviderNetwork != "" {
+		opts.Config.Networking.ProviderNetwork = opts.ProviderNetwork
+	}
 	// default config fields (important for usage as a library, where the config
 	// may be constructed in memory rather than from disk)
 	config.SetDefaultsCluster(opts.Config)

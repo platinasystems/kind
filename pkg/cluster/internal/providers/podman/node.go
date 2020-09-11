@@ -99,6 +99,10 @@ type nodeCmd struct {
 	ctx      context.Context
 }
 
+func (c *nodeCmd) String() string {
+	return c.command + " " + strings.Join(c.args, " ")
+}
+
 func (c *nodeCmd) Run() error {
 	args := []string{
 		"exec",

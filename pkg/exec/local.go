@@ -51,7 +51,10 @@ func (c *LocalCmder) CommandContext(ctx context.Context, name string, arg ...str
 		Cmd: osexec.CommandContext(ctx, name, arg...),
 	}
 }
-
+// String implementation
+func (c *LocalCmd) String() string {
+	return c.Cmd.String()
+}
 // SetEnv sets env
 func (cmd *LocalCmd) SetEnv(env ...string) Cmd {
 	cmd.Env = env

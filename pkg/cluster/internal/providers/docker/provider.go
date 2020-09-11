@@ -67,7 +67,9 @@ func (p *provider) Provision(status *cli.Status, cfg *config.Cluster) (err error
 	}
 
 	// ensure the pre-requesite network exists
-	networkName := fixedNetworkName
+	networkName := cfg.Networking.ProviderNetwork
+	status.Start(fmt.Sprintf("Using Network %s", networkName))
+
 	if n := os.Getenv("KIND_EXPERIMENTAL_DOCKER_NETWORK"); n != "" {
 		p.logger.Warn("WARNING: Overriding docker network due to KIND_EXPERIMENTAL_DOCKER_NETWORK")
 		p.logger.Warn("WARNING: Here be dragons! This is not supported currently.")
@@ -83,7 +85,7 @@ func (p *provider) Provision(status *cli.Status, cfg *config.Cluster) (err error
 	defer func() { status.End(err == nil) }()
 
 	// plan creating the containers
-	createContainerFuncs, err := planCreation(cfg, networkName)
+	createContainerFuncs, err := planCreation(p.logger, cfg, networkName)
 	if err != nil {
 		return err
 	}
@@ -178,6 +180,7 @@ func (p *provider) GetAPIServerEndpoint(cluster string) (string, error) {
 		),
 		n.String(),
 	)
+	p.logger.V(3).Infof("Docker port mapping command1: %s", cmd.String())
 	lines, err := exec.OutputLines(cmd)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get api server port")
@@ -194,6 +197,7 @@ func (p *provider) GetAPIServerEndpoint(cluster string) (string, error) {
 		),
 		n.String(),
 	)
+	p.logger.V(3).Infof("Docker port mapping command2: %s", cmd.String())
 	lines, err = exec.OutputLines(cmd)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get api server port")

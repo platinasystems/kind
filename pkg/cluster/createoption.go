@@ -124,3 +124,11 @@ func CreateWithDisplaySalutation(displaySalutation bool) CreateOption {
 		return nil
 	})
 }
+
+//
+func CreateWithNetwork(providerNetwork string) CreateOption {
+	return createOptionAdapter(func(o *internalcreate.ClusterOptions) error {
+		o.ProviderNetwork = providerNetwork
+		return nil
+	})
+}

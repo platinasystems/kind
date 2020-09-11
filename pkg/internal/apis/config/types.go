@@ -147,6 +147,9 @@ type Networking struct {
 	DisableDefaultCNI bool
 	// KubeProxyMode defines if kube-proxy should operate in iptables or ipvs mode
 	KubeProxyMode ProxyMode
+	// Docker network to be used for network access
+	// Default - "kind", "host" or "container:<name>"
+	ProviderNetwork string
 }
 
 // ClusterIPFamily defines cluster network IP family

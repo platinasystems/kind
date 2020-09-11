@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/golangci/golangci-lint v1.27.0
+	google.golang.org/appengine v1.4.0 // indirect
 	gotest.tools/gotestsum v0.5.1
 	k8s.io/code-generator v0.18.5
 )

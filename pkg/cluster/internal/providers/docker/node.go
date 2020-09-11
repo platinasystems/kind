@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 
 	"sigs.k8s.io/kind/pkg/errors"
@@ -52,22 +53,58 @@ func (n *node) Role() (string, error) {
 
 func (n *node) IP() (ipv4 string, ipv6 string, err error) {
 	// retrieve the IP address of the node using docker inspect
-	cmd := exec.Command("docker", "inspect",
-		"-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}},{{.GlobalIPv6Address}}{{end}}",
-		n.name, // ... against the "node" container
-	)
-	lines, err := exec.OutputLines(cmd)
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to get container details")
+	// cmd := exec.Command("docker", "inspect",
+	//	"-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}},{{.GlobalIPv6Address}}{{end}}",
+	//	n.name, // ... against the "node" container
+	//)
+	//lines, err := exec.OutputLines(cmd)
+	//if err != nil {
+	//	return "", "", errors.Wrap(err, "failed to get container details")
+	//}
+	//if len(lines) != 1 {
+	//	return "", "", errors.Errorf("file should only be one line, got %d lines", len(lines))
+	//}
+	//ips := strings.Split(lines[0], ",")
+	//if len(ips) != 2 {
+	//	return "", "", errors.Errorf("container addresses should have 2 values, got %d values", len(ips))
+	//}
+	//return ips[0], ips[1], nil
+
+	cmd := n.Command("ip", "addr", "show", "eth0")
+	lines, err := exec.CombinedOutputLines(cmd)
+
+	for i := 0; i < len(lines); i++ {
+		if strings.Contains(lines[i], "inet ") {
+			re := regexp.MustCompile(`inet (.*?) brd`)
+			if ipv4 == "" {
+				ipv4 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
+				// fmt.Printf("\ni %d, len %d, ipv4 %s", i, len(ipv4), ipv4)
+			}
+		}
+		if strings.Contains(lines[i], "inet6") {
+			re := regexp.MustCompile(`inet6 (.*?) scope`)
+			if ipv6 == "" {
+				ipv6 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
+				// fmt.Printf("\ni %d, len %d, ipv6 %s", i, len(ipv6), ipv6)
+			}
+		}
 	}
-	if len(lines) != 1 {
-		return "", "", errors.Errorf("file should only be one line, got %d lines", len(lines))
+
+	if (ipv4 == "" && ipv6 == "") {
+		return "", "", errors.Errorf("container ipv4 & ipv6 addresses NOT found")
 	}
-	ips := strings.Split(lines[0], ",")
-	if len(ips) != 2 {
-		return "", "", errors.Errorf("container addresses should have 2 values, got %d values", len(ips))
+	if (err == nil) {
+		err = n.AddEtcHostsEntry(ipv4)
 	}
-	return ips[0], ips[1], nil
+	return ipv4, ipv6, nil
+}
+
+func (n *node) AddEtcHostsEntry(ipv4 string) (err error) {
+
+	he := fmt.Sprintf("echo \"%s    %s\" >> /etc/hosts", ipv4, n.String())
+	err = n.Command("sh", "-c", he).Run()
+
+	return
 }
 
 func (n *node) Command(command string, args ...string) exec.Cmd {
@@ -97,6 +134,10 @@ type nodeCmd struct {
 	stdout   io.Writer
 	stderr   io.Writer
 	ctx      context.Context
+}
+
+func (c *nodeCmd) String() string {
+	return c.command + " " + strings.Join(c.args, " ")
 }
 
 func (c *nodeCmd) Run() error {

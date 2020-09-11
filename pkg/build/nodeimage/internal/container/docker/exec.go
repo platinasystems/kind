@@ -19,6 +19,7 @@ package docker
 import (
 	"context"
 	"io"
+	"strings"
 
 	"sigs.k8s.io/kind/pkg/exec"
 )
@@ -64,6 +65,9 @@ type containerCmd struct {
 	ctx      context.Context
 }
 
+func (c *containerCmd) String() string {
+	return c.command + " " + strings.Join(c.args, " ")
+}
 func (c *containerCmd) Run() error {
 	args := []string{
 		"exec",

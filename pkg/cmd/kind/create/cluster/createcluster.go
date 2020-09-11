@@ -40,6 +40,7 @@ type flagpole struct {
 	Retain     bool
 	Wait       time.Duration
 	Kubeconfig string
+	Network    string
 }
 
 // NewCommand returns a new cobra.Command for cluster creation
@@ -61,6 +62,7 @@ func NewCommand(logger log.Logger, streams cmd.IOStreams) *cobra.Command {
 	cmd.Flags().BoolVar(&flags.Retain, "retain", false, "retain nodes for debugging when cluster creation fails")
 	cmd.Flags().DurationVar(&flags.Wait, "wait", time.Duration(0), "wait for control plane node to be ready (default 0s)")
 	cmd.Flags().StringVar(&flags.Kubeconfig, "kubeconfig", "", "sets kubeconfig path instead of $KUBECONFIG or $HOME/.kube/config")
+	cmd.Flags().StringVar(&flags.Network, "network", "kind", "Use alternate Network for node image, host or cotainer:<name>")
 	return cmd
 }
 
@@ -86,6 +88,7 @@ func runE(logger log.Logger, streams cmd.IOStreams, flags *flagpole) error {
 		cluster.CreateWithKubeconfigPath(flags.Kubeconfig),
 		cluster.CreateWithDisplayUsage(true),
 		cluster.CreateWithDisplaySalutation(true),
+		cluster.CreateWithNetwork(flags.Network),
 	); err != nil {
 		return errors.Wrap(err, "failed to create cluster")
 	}

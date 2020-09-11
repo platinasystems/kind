@@ -32,6 +32,7 @@ type Cmd interface {
 	SetStdin(io.Reader) Cmd
 	SetStdout(io.Writer) Cmd
 	SetStderr(io.Writer) Cmd
+	String() string
 }
 
 // Cmder abstracts over creating commands

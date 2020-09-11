@@ -39,6 +39,7 @@ import (
 // leaves users with complex networking desires to create and manage their own
 // networks.
 const fixedNetworkName = "kind"
+const hostNetworkName = "host"
 
 // ensureNetwork checks if docker network by name exists, if not it creates it
 func ensureNetwork(name string) error {

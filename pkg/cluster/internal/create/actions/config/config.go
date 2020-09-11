@@ -79,7 +79,7 @@ func (a *Action) Execute(ctx *actions.ActionContext) error {
 	kubeadmConfigPlusPatches := func(node nodes.Node, data kubeadm.ConfigData) func() error {
 		return func() error {
 			data.NodeName = node.String()
-			kubeadmConfig, err := getKubeadmConfig(ctx.Config, data, node)
+			kubeadmConfig, err := getKubeadmConfig(ctx, ctx.Config, data, node)
 			if err != nil {
 				// TODO(bentheelder): logging here
 				return errors.Wrap(err, "failed to generate kubeadm config content")
@@ -166,7 +166,8 @@ func (a *Action) Execute(ctx *actions.ActionContext) error {
 
 // getKubeadmConfig generates the kubeadm config contents for the cluster
 // by running data through the template and applying patches as needed.
-func getKubeadmConfig(cfg *config.Cluster, data kubeadm.ConfigData, node nodes.Node) (path string, err error) {
+func getKubeadmConfig(ctx *actions.ActionContext, cfg *config.Cluster, data kubeadm.ConfigData, node nodes.Node) (path string, err error) {
+
 	kubeVersion, err := nodeutils.KubeVersion(node)
 	if err != nil {
 		// TODO(bentheelder): logging here

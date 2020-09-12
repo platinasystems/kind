@@ -125,10 +125,31 @@ func CreateWithDisplaySalutation(displaySalutation bool) CreateOption {
 	})
 }
 
-//
+// CreateWithNetwork allows use of host and container network modes or a different docker network than "kind"
 func CreateWithNetwork(providerNetwork string) CreateOption {
 	return createOptionAdapter(func(o *internalcreate.ClusterOptions) error {
 		o.ProviderNetwork = providerNetwork
+		return nil
+	})
+}
+
+// CreateWithHostIf allows a specific interface to be used for binding control plane
+// With docker networks, it is eth0 (default),
+// when docker network mode is host or container:<name>, any interface can be used to pick up binding address
+func CreateWithHostIf(hostIf string) CreateOption {
+	return createOptionAdapter(func(o *internalcreate.ClusterOptions) error {
+		o.HostIf = hostIf
+		return nil
+	})
+}
+
+// This is a Hack!!
+// CreateWithHostAddr allows to specify an Address for ApiServer to setup kubeadm config.
+// kubeadm config setup happens before the container is created forcing the this to be used as it is not possible
+// to pick up this address using the HostIf
+func CreateWithHostAddr(hostAddr string) CreateOption {
+	return createOptionAdapter(func(o *internalcreate.ClusterOptions) error {
+		o.HostAddr = hostAddr
 		return nil
 	})
 }

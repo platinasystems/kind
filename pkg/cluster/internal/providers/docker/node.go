@@ -51,7 +51,7 @@ func (n *node) Role() (string, error) {
 	return lines[0], nil
 }
 
-func (n *node) IP() (ipv4 string, ipv6 string, err error) {
+func (n *node) IP(iface string) (ipv4 string, ipv6 string, err error) {
 	// retrieve the IP address of the node using docker inspect
 	// cmd := exec.Command("docker", "inspect",
 	//	"-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}},{{.GlobalIPv6Address}}{{end}}",
@@ -70,7 +70,7 @@ func (n *node) IP() (ipv4 string, ipv6 string, err error) {
 	//}
 	//return ips[0], ips[1], nil
 
-	cmd := n.Command("ip", "addr", "show", "eth0")
+	cmd := n.Command("ip", "addr", "show", iface)
 	lines, err := exec.CombinedOutputLines(cmd)
 
 	for i := 0; i < len(lines); i++ {

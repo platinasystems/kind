@@ -100,18 +100,15 @@ func planCreation(logger log.Logger, cfg *config.Cluster, networkName string) (c
 				node.ExtraMounts[m].HostPath = absHostPath
 			}
 		}
-		
+
 		// plan actual creation based on role
 		switch node.Role {
 		case config.ControlPlaneRole:
 			createContainerFuncs = append(createContainerFuncs, func() error {
-				if cfg.Networking.ProviderNetwork == "host" {
-					apiServerAddress = "192.169.65.3"  // BIG HACK!!
+				if cfg.Networking.ProviderNetwork != "kind" {
+					apiServerAddress = cfg.Networking.HostAddr  // Take it from cmd line
 					apiServerPort = common.APIServerInternalPort // 6443
 					genericArgs = append(genericArgs, "--label", fmt.Sprintf("desktop.docker.io/ports/%d/tcp=%s:%d", common.APIServerInternalPort, apiServerAddress, apiServerPort))
-					//extraArgs = []string {
-					//	"--label", fmt.Sprintf("desktop.docker.io/ports/%d/tcp: \"%s:%d\"", common.APIServerInternalPort, apiServerAddress, apiServerPort),
-					//}
 				} else {
 					node.ExtraPortMappings = append(node.ExtraPortMappings,
 						config.PortMapping{

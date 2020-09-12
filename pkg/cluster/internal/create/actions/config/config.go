@@ -192,8 +192,9 @@ func getKubeadmConfig(ctx *actions.ActionContext, cfg *config.Cluster, data kube
 		return "", errors.Errorf("failed to match node %q to config", node.String())
 	}
 
+
 	// get the node ip address
-	nodeAddress, nodeAddressIPv6, err := node.IP()
+	nodeAddress, nodeAddressIPv6, err := node.IP(cfg.Networking.HostIf)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get IP for node")
 	}

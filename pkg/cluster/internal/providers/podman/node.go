@@ -50,8 +50,9 @@ func (n *node) Role() (string, error) {
 	return lines[0], nil
 }
 
-func (n *node) IP() (ipv4 string, ipv6 string, err error) {
+func (n *node) IP(iface string) (ipv4 string, ipv6 string, err error) {
 	// retrieve the IP address of the node using podman inspect
+	_ = iface  // silence the compiler
 	cmd := exec.Command("podman", "inspect",
 		"-f", "{{.NetworkSettings.IPAddress}},{{.NetworkSettings.GlobalIPv6Address}}",
 		n.name, // ... against the "node" container

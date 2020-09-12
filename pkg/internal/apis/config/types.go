@@ -150,6 +150,11 @@ type Networking struct {
 	// Docker network to be used for network access
 	// Default - "kind", "host" or "container:<name>"
 	ProviderNetwork string
+	// Pick up bind address for control plane from this interface
+	// for a docker network, this is eth0 and for host or container mode it can be anything specified on cmd line
+	HostIf		string
+	// Hack to have access to the host address to build kubeadm config before container gets built
+	HostAddr	string
 }
 
 // ClusterIPFamily defines cluster network IP family

@@ -249,7 +249,7 @@ func (p *provider) GetAPIServerInternalEndpoint(cluster string) (string, error) 
 	}
 	// TODO: check cluster IP family and return the correct IP
 	// This means IPv6 singlestack is broken on podman
-	ipv4, _, err := n.IP()
+	ipv4, _, err := n.IP("")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get apiserver IP")
 	}

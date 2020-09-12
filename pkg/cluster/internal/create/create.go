@@ -71,6 +71,8 @@ type ClusterOptions struct {
 	DisplaySalutation bool
 	// Overrides "kind" network used for communicating between the node images
 	ProviderNetwork string
+	HostIf			string
+	HostAddr		string
 }
 
 // Cluster creates a cluster
@@ -248,6 +250,15 @@ func fixupOptions(opts *ClusterOptions) error {
 	if opts.ProviderNetwork != "" {
 		opts.Config.Networking.ProviderNetwork = opts.ProviderNetwork
 	}
+
+	if opts.HostIf != "" {
+		opts.Config.Networking.HostIf = opts.HostIf
+	}
+
+	if opts.HostIf != "" {
+		opts.Config.Networking.HostAddr = opts.HostAddr
+	}
+
 	// default config fields (important for usage as a library, where the config
 	// may be constructed in memory rather than from disk)
 	config.SetDefaultsCluster(opts.Config)

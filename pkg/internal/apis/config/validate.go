@@ -50,6 +50,10 @@ func (c *Cluster) Validate() error {
 		errs = append(errs, errors.Errorf("invalid kubeProxyMode: %s", c.Networking.KubeProxyMode))
 	}
 
+	if c.Networking.ProviderNetwork != "kind" && c.Networking.HostIf != "eth0" && c.Networking.HostAddr == "" {
+		errs = append(errs, errors.Errorf("invalid Network %s, HostIf %s and HostAddr %s sombination",
+			c.Networking.ProviderNetwork, c.Networking.HostIf, c.Networking.HostAddr))
+	}
 	// validate nodes
 	numByRole := make(map[NodeRole]int32)
 	// All nodes in the config should be valid

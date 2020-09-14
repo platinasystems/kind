@@ -75,10 +75,18 @@ func (n *node) IP(iface string) (ipv4 string, ipv6 string, err error) {
 
 	for i := 0; i < len(lines); i++ {
 		if strings.Contains(lines[i], "inet ") {
-			re := regexp.MustCompile(`inet (.*?) brd`)
-			if ipv4 == "" {
-				ipv4 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
-				// fmt.Printf("\ni %d, len %d, ipv4 %s", i, len(ipv4), ipv4)
+			re, err := regexp.Compile(`inet (.*?) brd`)
+			if err == nil {
+				if ipv4 == "" {
+					ipv4 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
+					// fmt.Printf("\ni %d, len %d, ipv4 %s", i, len(ipv4), ipv4)
+				}
+			} else {
+				re, err = regexp.Compile(`inet (.*?) scope`)
+				if ipv4 == "" {
+					ipv4 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
+					// fmt.Printf("\ni %d, len %d, ipv4 %s", i, len(ipv4), ipv4)
+				}
 			}
 		}
 		if strings.Contains(lines[i], "inet6") {

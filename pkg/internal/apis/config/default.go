@@ -84,6 +84,7 @@ func SetDefaultsCluster(obj *Cluster) {
 	if obj.Networking.ProviderNetwork == "" {
 		obj.Networking.ProviderNetwork = "kind"
 	}
+	obj.Networking.DisableDefaultCNI = true
 }
 
 // SetDefaultsNode sets uninitialized fields to their default value.

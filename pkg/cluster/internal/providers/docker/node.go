@@ -73,28 +73,41 @@ func (n *node) IP(iface string) (ipv4 string, ipv6 string, err error) {
 	cmd := n.Command("ip", "addr", "show", iface)
 	lines, err := exec.CombinedOutputLines(cmd)
 
+	// str := fmt.Sprintf("ip addr show %s output: %v", iface, lines)
+	// return "", "", errors.Errorf("%s--->\n  %v", iface, lines)
+ 
 	for i := 0; i < len(lines); i++ {
+
+		// Look for ipv4 address
 		if strings.Contains(lines[i], "inet ") {
-			re, err := regexp.Compile(`inet (.*?) brd`)
-			if err == nil {
-				if ipv4 == "" {
-					ipv4 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
-					// fmt.Printf("\ni %d, len %d, ipv4 %s", i, len(ipv4), ipv4)
-				}
-			} else {
+			if ipv4 != "" {
+				continue
+			}
+
+			re, _ := regexp.Compile(`inet (.*?) brd`)
+			temp := re.FindStringSubmatch(lines[i])
+
+			if temp == nil {
 				re, err = regexp.Compile(`inet (.*?) scope`)
-				if ipv4 == "" {
-					ipv4 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
-					// fmt.Printf("\ni %d, len %d, ipv4 %s", i, len(ipv4), ipv4)
-				}
+				temp = re.FindStringSubmatch(lines[i])
+			}
+
+			if temp != nil {
+				ipv4 = strings.Split(temp[1], "/")[0]
+				// fmt.Printf("\ni %d, len %d, ipv4 %s", i, len(ipv4), ipv4)
+			} else {
+				return "", "", errors.Errorf("Unable to parse for ipv4, ip addr show: %s\n\n %v \n", iface, lines)
 			}
 		}
+
+		// Look for ipv6 addresse
 		if strings.Contains(lines[i], "inet6") {
-			re := regexp.MustCompile(`inet6 (.*?) scope`)
-			if ipv6 == "" {
-				ipv6 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
-				// fmt.Printf("\ni %d, len %d, ipv6 %s", i, len(ipv6), ipv6)
+			if ipv6 != "" {
+				continue
 			}
+			re := regexp.MustCompile(`inet6 (.*?) scope`)
+			ipv6 = strings.Split(re.FindStringSubmatch(lines[i])[1], "/")[0]
+			// fmt.Printf("\ni %d, len %d, ipv6 %s", i, len(ipv6), ipv6)
 		}
 	}
 

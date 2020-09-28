@@ -135,6 +135,7 @@ func (p *Provider) Create(name string, options ...CreateOption) error {
 	opts := &internalcreate.ClusterOptions{
 		NameOverride: name,
 	}
+
 	for _, o := range options {
 		if err := o.apply(opts); err != nil {
 			return err
